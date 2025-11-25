@@ -1,0 +1,11 @@
+name: dogla
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - pyqt
+  - pillow
+  - imagehash
+  - send2trash
+  - pip
