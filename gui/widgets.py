@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
-                             QCheckBox, QFrame, QSizePolicy)
+                             QCheckBox, QFrame, QSizePolicy, QPushButton)
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import Qt, pyqtSignal
 
@@ -34,11 +34,13 @@ class ImageItemWidget(QWidget):
         # Info
         self.path_label = QLabel(self.file_path)
         self.path_label.setWordWrap(True)
-        self.path_label.setStyleSheet("font-size: 10px; color: #aaa;")
+        self.path_label.setObjectName("infoLabel")
+        self.path_label.setStyleSheet("font-size: 10px;")
         layout.addWidget(self.path_label)
         
         self.size_label = QLabel(self.size_str)
-        self.size_label.setStyleSheet("font-size: 10px; color: #aaa;")
+        self.size_label.setObjectName("infoLabel")
+        self.size_label.setStyleSheet("font-size: 10px;")
         layout.addWidget(self.size_label)
         
         # Checkbox
@@ -62,9 +64,28 @@ class DuplicateGroupWidget(QFrame):
         layout = QVBoxLayout()
         self.setLayout(layout)
         
+        # Header Layout
+        header_layout = QHBoxLayout()
+        
         header = QLabel(f"Duplicate Group (Hash: {self.hash_val[:8]}...)")
-        header.setStyleSheet("font-weight: bold; color: #ddd;")
-        layout.addWidget(header)
+        header.setObjectName("groupHeader")
+        header.setStyleSheet("font-weight: bold;")
+        header_layout.addWidget(header)
+        
+        header_layout.addStretch()
+        
+        if len(self.files) > 1:
+            select_copies_btn = QPushButton("Select Copies")
+            select_copies_btn.setFixedWidth(90)
+            select_copies_btn.clicked.connect(self.select_all_except_first)
+            header_layout.addWidget(select_copies_btn)
+            
+            deselect_btn = QPushButton("Deselect All")
+            deselect_btn.setFixedWidth(80)
+            deselect_btn.clicked.connect(self.deselect_all)
+            header_layout.addWidget(deselect_btn)
+            
+        layout.addLayout(header_layout)
         
         images_layout = QHBoxLayout()
         images_layout.setAlignment(Qt.AlignLeft)
@@ -101,6 +122,10 @@ class DuplicateGroupWidget(QFrame):
         
         # Check the rest
         for widget in self.image_widgets[1:]:
+            widget.checkbox.setChecked(True)
+
+    def select_all(self):
+        for widget in self.image_widgets:
             widget.checkbox.setChecked(True)
 
     def deselect_all(self):
