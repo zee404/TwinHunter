@@ -1,7 +1,8 @@
 import os
 from PyQt5.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                              QPushButton, QFileDialog, QScrollArea, QLabel, 
-                             QProgressBar, QMessageBox)
+                             QProgressBar, QMessageBox, QCheckBox)
+from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from core.scanner import ImageScanner
 from core.utils import format_size, safe_delete
@@ -28,6 +29,12 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("TwinHunter - Duplicate Image Detector")
         self.resize(1000, 800)
+        
+        # Set Icon
+        from PyQt5.QtGui import QIcon
+        icon_path = os.path.join("assets", "icon.png")
+        if os.path.exists(icon_path):
+            self.setWindowIcon(QIcon(icon_path))
         self.is_dark_mode = True
         self.duplicates = {}
         self.init_ui()
@@ -44,6 +51,8 @@ class MainWindow(QMainWindow):
             QProgressBar::chunk { background-color: #007acc; }
             DuplicateGroupWidget { border: 1px solid #444; margin: 5px; border-radius: 5px; background-color: #2b2b2b; }
             QLabel#imageLabel { background-color: #333; border: 1px solid #555; }
+            QLabel#groupHeader { color: #ddd; }
+            QLabel#infoLabel { color: #aaa; }
         """
 
     def get_light_theme(self):
@@ -59,6 +68,8 @@ class MainWindow(QMainWindow):
             DuplicateGroupWidget { border: 1px solid #ccc; margin: 5px; border-radius: 5px; background-color: #ffffff; color: #000000; }
             QLabel#imageLabel { background-color: #e0e0e0; border: 1px solid #ccc; }
             QCheckBox { color: #000000; }
+            QLabel#groupHeader { color: #000000; }
+            QLabel#infoLabel { color: #555555; }
         """
 
     def init_ui(self):
@@ -91,13 +102,36 @@ class MainWindow(QMainWindow):
         
         main_layout.addLayout(top_bar)
 
-        # Progress Bar
+        # Progress Area
+        progress_layout = QVBoxLayout()
+        
+        self.preview_label = QLabel()
+        self.preview_label.setFixedSize(100, 100)
+        self.preview_label.setAlignment(Qt.AlignCenter)
+        self.preview_label.setStyleSheet("background-color: #333; border: 1px solid #555;")
+        self.preview_label.setVisible(False)
+        
+        # Center the preview
+        preview_container = QHBoxLayout()
+        preview_container.addStretch()
+        preview_container.addWidget(self.preview_label)
+        preview_container.addStretch()
+        progress_layout.addLayout(preview_container)
+
         self.progress_bar = QProgressBar()
         self.progress_bar.setVisible(False)
-        main_layout.addWidget(self.progress_bar)
+        progress_layout.addWidget(self.progress_bar)
         
         self.status_label = QLabel("")
-        main_layout.addWidget(self.status_label)
+        self.status_label.setAlignment(Qt.AlignCenter)
+        progress_layout.addWidget(self.status_label)
+        
+        self.preview_check = QCheckBox("Show Live Preview (May slow down scanning)")
+        self.preview_check.setChecked(True)
+        self.preview_check.setStyleSheet("margin-top: 5px;")
+        progress_layout.addWidget(self.preview_check, 0, Qt.AlignCenter)
+        
+        main_layout.addLayout(progress_layout)
 
         # Results Area
         scroll = QScrollArea()
@@ -174,6 +208,8 @@ class MainWindow(QMainWindow):
     def start_scan(self):
         self.clear_results()
         self.progress_bar.setVisible(True)
+        if self.preview_check.isChecked():
+            self.preview_label.setVisible(True)
         self.scan_btn.setEnabled(False)
         self.stats_label.setText("Scanning...")
         
@@ -186,10 +222,16 @@ class MainWindow(QMainWindow):
         self.progress_bar.setMaximum(total)
         self.progress_bar.setValue(current)
         self.status_label.setText(f"Scanning: {os.path.basename(current_file)}")
+        
+        if self.preview_check.isChecked() and os.path.exists(current_file):
+            pixmap = QPixmap(current_file)
+            if not pixmap.isNull():
+                self.preview_label.setPixmap(pixmap.scaled(100, 100, Qt.KeepAspectRatio))
 
     def scan_finished(self, duplicates):
         self.duplicates = duplicates
         self.progress_bar.setVisible(False)
+        self.preview_label.setVisible(False)
         self.status_label.setText("")
         self.scan_btn.setEnabled(True)
         
