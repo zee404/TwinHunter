@@ -30,6 +30,9 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("TwinHunter - Duplicate Image Detector")
         self.resize(1000, 800)
         
+        # Enable Drag & Drop
+        self.setAcceptDrops(True)
+        
         # Set Icon
         from PyQt5.QtGui import QIcon
         icon_path = os.path.join("assets", "icon.png")
@@ -79,7 +82,7 @@ class MainWindow(QMainWindow):
 
         # Top Bar
         top_bar = QHBoxLayout()
-        self.path_label = QLabel("No folder selected")
+        self.path_label = QLabel("No folder selected (Drag folder here)")
         self.path_label.setStyleSheet("border: 1px solid #555; padding: 5px; border-radius: 3px; color: #ddd;")
         
         select_btn = QPushButton("Select Folder")
@@ -321,3 +324,24 @@ class MainWindow(QMainWindow):
             widget = self.results_layout.itemAt(i).widget()
             if isinstance(widget, DuplicateGroupWidget):
                 widget.deselect_all()
+
+    def dragEnterEvent(self, event):
+        if event.mimeData().hasUrls():
+            # Check if at least one URL is a directory
+            for url in event.mimeData().urls():
+                if url.isLocalFile() and os.path.isdir(url.toLocalFile()):
+                    event.accept()
+                    return
+        event.ignore()
+
+    def dropEvent(self, event):
+        for url in event.mimeData().urls():
+            if url.isLocalFile():
+                path = url.toLocalFile()
+                if os.path.isdir(path):
+                    self.folder_path = path
+                    self.path_label.setText(path)
+                    self.scan_btn.setEnabled(True)
+                    self.clear_results()
+                    # Optional: Auto-start scan? Let's wait for user to click scan.
+                    break
