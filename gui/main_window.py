@@ -1,7 +1,7 @@
 import os
 from PyQt5.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                              QPushButton, QFileDialog, QScrollArea, QLabel, 
-                             QProgressBar, QMessageBox, QCheckBox)
+                             QProgressBar, QMessageBox, QCheckBox, QSlider, QSpinBox)
 from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from core.scanner import ImageScanner
@@ -12,16 +12,17 @@ class ScanThread(QThread):
     progress_update = pyqtSignal(int, int, str)
     scan_complete = pyqtSignal(dict)
 
-    def __init__(self, folder_path):
+    def __init__(self, folder_path, threshold=0):
         super().__init__()
         self.folder_path = folder_path
+        self.threshold = threshold
         self.scanner = ImageScanner()
 
     def run(self):
         def callback(current, total, current_file):
             self.progress_update.emit(current, total, current_file)
         
-        duplicates = self.scanner.scan_directory(self.folder_path, callback)
+        duplicates = self.scanner.scan_directory(self.folder_path, callback, self.threshold)
         self.scan_complete.emit(duplicates)
 
 class MainWindow(QMainWindow):
@@ -104,6 +105,31 @@ class MainWindow(QMainWindow):
         top_bar.addWidget(self.theme_btn)
         
         main_layout.addLayout(top_bar)
+        
+        # Settings Area (Threshold)
+        settings_layout = QHBoxLayout()
+        settings_layout.setAlignment(Qt.AlignLeft)
+        
+        lbl = QLabel("Similarity Threshold:")
+        lbl.setToolTip("0 = Exact Match, 10 = Very Loose Match")
+        settings_layout.addWidget(lbl)
+        
+        self.threshold_slider = QSlider(Qt.Horizontal)
+        self.threshold_slider.setRange(0, 10)
+        self.threshold_slider.setValue(0)
+        self.threshold_slider.setFixedWidth(200)
+        settings_layout.addWidget(self.threshold_slider)
+        
+        self.threshold_spin = QSpinBox()
+        self.threshold_spin.setRange(0, 10)
+        self.threshold_spin.setValue(0)
+        settings_layout.addWidget(self.threshold_spin)
+        
+        # Sync slider and spinbox
+        self.threshold_slider.valueChanged.connect(self.threshold_spin.setValue)
+        self.threshold_spin.valueChanged.connect(self.threshold_slider.setValue)
+        
+        main_layout.addLayout(settings_layout)
 
         # Progress Area
         progress_layout = QVBoxLayout()
@@ -216,7 +242,8 @@ class MainWindow(QMainWindow):
         self.scan_btn.setEnabled(False)
         self.stats_label.setText("Scanning...")
         
-        self.thread = ScanThread(self.folder_path)
+        threshold = self.threshold_slider.value()
+        self.thread = ScanThread(self.folder_path, threshold)
         self.thread.progress_update.connect(self.update_progress)
         self.thread.scan_complete.connect(self.scan_finished)
         self.thread.start()
