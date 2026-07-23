@@ -36,8 +36,8 @@ Requirements:
 
 ```powershell
 python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
-.\.venv\Scripts\python.exe main.py
+.\.venv\Scripts\python -m pip install -r requirements.txt
+.\.venv\Scripts\python main.py
 ```
 
 Using the virtual environment's Python executable directly avoids changing the PowerShell execution policy.
@@ -47,7 +47,7 @@ Using the virtual environment's Python executable directly avoids changing the P
 Install development dependencies:
 
 ```powershell
-.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
+.\.venv\Scripts\python -m pip install -r requirements-dev.txt
 ```
 
 Then build:
@@ -76,7 +76,7 @@ The downloaded demo media is intentionally ignored by Git. Source and licensing 
 ## Run tests
 
 ```powershell
-.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python -m unittest discover -s tests -v
 ```
 
 ## Safety
