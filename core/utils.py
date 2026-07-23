@@ -26,3 +26,13 @@ def get_file_size(file_path):
         return os.path.getsize(file_path)
     except OSError:
         return 0
+
+def get_image_quality(file_path):
+    """Return metadata used to choose a sensible default keeper."""
+    try:
+        from PIL import Image
+        with Image.open(file_path) as image:
+            pixels = image.width * image.height
+        return pixels, os.path.getsize(file_path), -len(file_path), file_path.casefold()
+    except (OSError, ValueError):
+        return 0, get_file_size(file_path), -len(file_path), file_path.casefold()

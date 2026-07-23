@@ -1,4 +1,4 @@
-name: dogla
+name: twinhunter
 channels:
   - conda-forge
   - defaults
