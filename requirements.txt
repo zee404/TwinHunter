@@ -1,4 +1,4 @@
-PyQt6
-Pillow
-imagehash
-send2trash
+PyQt5>=5.15.11,<5.16
+Pillow>=10.0,<13
+ImageHash>=4.3,<5
+Send2Trash>=1.8,<2.2
